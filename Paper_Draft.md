@@ -324,8 +324,6 @@ Szymborski, D. (ongoing). *ZiPS Projections.* FanGraphs. <https://www.fangraphs.
 
 Tango, T., Lichtman, M., & Dolphin, A. (2007). *The Book: Playing the Percentages in Baseball.* Potomac Books.
 
-Tangirala, A. (2026). *Beyond Raw wRC+: Which Triple-A Hitting Skills Translate to Major League Baseball — reproducibility repository* [Software]. Zenodo. <https://doi.org/10.5281/zenodo.21186325>
-
 ---
 
 ## Appendix — Data availability and reproducibility
