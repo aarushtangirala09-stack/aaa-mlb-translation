@@ -1,0 +1,24 @@
+# Raw FanGraphs data — proprietary, must not be committed
+data/raw/aaa/*.csv
+data/raw/mlb/*.csv
+
+# Derived cohort data that still contains FanGraphs per-player stats
+data/processed/matched_players.csv
+data/processed/matched_players_with_score.csv
+
+# Python venv and caches
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# macOS
+.DS_Store
+
+# Editor / IDE
+.vscode/
+.idea/
+
+# Temp files
+*.tmp
+*.swp
