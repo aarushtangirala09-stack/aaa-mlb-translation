@@ -1,0 +1,13 @@
+# Exact package versions used to produce the results in the paper.
+# Python 3.9+.
+pandas==2.3.3
+numpy==2.0.2
+scikit-learn==1.6.1
+statsmodels==0.14.6
+scipy==1.13.1
+matplotlib==3.9.4
+seaborn==0.13.2
+
+# Only needed to regenerate the PDF from Paper_Draft.md via scripts/make_pdf.py.
+# Safe to omit if you only need the analysis pipeline.
+markdown==3.9

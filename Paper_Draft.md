@@ -43,7 +43,7 @@ The contribution of this paper is positioned as follows: rather than competing w
 All data are drawn from FanGraphs (fangraphs.com). Two leaderboards were exported manually from the FanGraphs membership-gated interface:
 
 - **AAA batting, 2015–2024**, split by season, with the Dashboard/Advanced stat view selected so that BB%, K%, ISO, BABIP, wOBA, and wRC+ are exported. Every player-season is retained regardless of plate appearance count in the raw export. The export contains 9,370 player-seasons across 5,245 unique AAA hitters. The 2020 season is absent because the minor-league season was canceled due to COVID-19.
-- **MLB batting, 2015–2025**, split by season, no plate-appearance minimum. The export contains 15,521 player-seasons across 4,019 unique MLB hitters.
+- **MLB batting, 2015–2025**, split by season, with the Dashboard/Advanced stat view selected so that BB%, K%, ISO, BABIP, wOBA, and wRC+ are exported. Every player-season is retained regardless of plate-appearance count in the raw export. The export contains 15,521 player-seasons across 4,019 unique MLB hitters.
 
 The MLB window extends one year beyond the AAA window so that hitters from the 2024 AAA cohort whose major-league debuts occurred in 2025 are not artificially excluded.
 
@@ -115,7 +115,7 @@ As a complementary sensitivity check, we impute MLB wRC+ values for the 4,759 no
 
 ### 3.6 Reproducibility
 
-All analyses are implemented in Python 3.9 using `pandas`, `numpy`, `scikit-learn`, `statsmodels`, `matplotlib`, and `seaborn`. The four analysis scripts (`01_load_and_match.py`, `02_regression.py`, `03_translation_score.py`, `04_survivorship.py`) reproduce every figure, table, and statistic in this paper from the two raw FanGraphs CSV exports.
+All analyses are implemented in Python 3.9. The dependency set is pinned in the repository's `requirements.txt`; installing from that file yields the exact package versions used for the results reported here (`pandas`, `numpy`, `scikit-learn`, `statsmodels`, `scipy`, `matplotlib`, `seaborn`, and `markdown` for PDF regeneration). The four analysis scripts (`01_load_and_match.py`, `02_regression.py`, `03_translation_score.py`, `04_survivorship.py`) reproduce every table and statistic in the paper from the two raw FanGraphs CSV exports; a fifth script (`05_final_figures.py`) regenerates the five headline figures; two additional probe scripts (`probe_extended_score.py`, `probe_pcl.py`) reproduce the negative-result Option B extensions documented in §6.
 
 ---
 
@@ -326,28 +326,49 @@ Tango, T., Lichtman, M., & Dolphin, A. (2007). *The Book: Playing the Percentage
 
 ---
 
-## Appendix — Files and reproducibility
+## Appendix — Data availability and reproducibility
 
-| Artifact | Path |
-|---|---|
-| AAA raw data (FanGraphs export) | `data/raw/aaa/fangraphs-minor-league-leaders_updated_stats.csv` |
-| MLB raw data (FanGraphs export) | `data/raw/mlb/fangraphs-leaderboards_MLB.csv` |
-| Matched analysis dataset (corrected pipeline) | `data/processed/matched_players.csv` |
-| Per-player Translation Score | `data/processed/matched_players_with_score.csv` |
-| Regression coefficients table | `data/processed/regression_coefficients.csv` |
-| Model comparison table | `data/processed/step3_model_comparison.csv` |
-| Survivorship coefficients table | `data/processed/survivorship_corrected_coefs.csv` |
-| Sensitivity analysis table | `data/processed/sensitivity_coefficients.csv` |
-| Step 1 script | `scripts/01_load_and_match.py` |
-| Step 2 script | `scripts/02_regression.py` |
-| Step 3 script | `scripts/03_translation_score.py` |
-| Step 4 script | `scripts/04_survivorship.py` |
+### Data availability
 
-The full pipeline is reproducible end-to-end from the two raw CSV exports via:
+All source data for this study is drawn from **FanGraphs** (<https://www.fangraphs.com>) leaderboards, which are publicly viewable in the web interface at no cost. The specific inputs used are two leaderboard views:
+
+- **AAA batting**, 2015–2024, Dashboard/Advanced view, split by season, no plate-appearance minimum. Approximately 9,370 player-seasons.
+- **MLB batting**, 2015–2025, Dashboard/Advanced view, split by season, no plate-appearance minimum. Approximately 15,521 player-seasons.
+
+Original access date for both exports: **2026-06-18**. Because FanGraphs restates historical minor-league lines as league constants are refined and as roster/team affiliations are corrected, a re-export on a different date may return marginally different numeric values for the same player-seasons; the 2026-06-18 access date pins the specific snapshot used in this paper.
+
+The bulk CSV export functionality on FanGraphs is available to Membership subscribers; the same underlying rate statistics are otherwise viewable, page-by-page, without a subscription and can also be pulled programmatically via community tools such as `pybaseball`. Because the source data is FanGraphs's property, the raw CSVs are **not redistributed** in the associated code repository. A researcher wishing to reproduce the pipeline end-to-end can obtain the identical data by any of these routes, then place the resulting CSVs at `data/raw/aaa/` and `data/raw/mlb/` in the repository directory tree. The repository's `EXPORT_INSTRUCTIONS.md` documents the exact URL parameters used.
+
+### Code and derived outputs
+
+Code and derived outputs are available at:
+
+**<https://github.com/aarushtangirala09-stack/aaa-mlb-translation>**
+
+The repository contains the four analysis scripts (`01_load_and_match.py`, `02_regression.py`, `03_translation_score.py`, `04_survivorship.py`), two extension probes referenced in §6 (`probe_extended_score.py`, `probe_pcl.py`), the figure-generation script, and four derived output tables that contain no per-player FanGraphs values:
+
+- `regression_coefficients.csv` — Table 2 (coefficients from all three specifications)
+- `step3_model_comparison.csv` — Table 3 (competitor cross-validation metrics)
+- `survivorship_corrected_coefs.csv` — Table 4 (OLS vs. IPW)
+- `sensitivity_coefficients.csv` — sensitivity-analysis coefficients
+
+The paper source (`Paper_Draft.md`), rendered PDF, and all figures are also included.
+
+### Cohort-level derived datasets
+
+The matched cohort dataset (`matched_players.csv`) and the per-player Translation Score dataset (`matched_players_with_score.csv`) are **not** distributed in the repository because they still contain FanGraphs's per-player values (ISO, K%, wRC+, etc.) for the 486 matched hitters. Both files are regenerated in place by running `scripts/01_load_and_match.py` and `scripts/03_translation_score.py` respectively, once the raw FanGraphs CSVs are placed in `data/raw/`.
+
+### Reproduction
+
+Assuming Python 3.9+ and the two FanGraphs CSVs in place, the full pipeline runs end-to-end from the repository via:
 
 ```bash
+python -m venv .venv
+.venv/bin/pip install -r requirements.txt
+
 .venv/bin/python scripts/01_load_and_match.py
 .venv/bin/python scripts/02_regression.py
 .venv/bin/python scripts/03_translation_score.py
 .venv/bin/python scripts/04_survivorship.py
+.venv/bin/python scripts/05_final_figures.py
 ```
