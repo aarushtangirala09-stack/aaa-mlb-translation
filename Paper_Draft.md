@@ -324,6 +324,8 @@ Szymborski, D. (ongoing). *ZiPS Projections.* FanGraphs. <https://www.fangraphs.
 
 Tango, T., Lichtman, M., & Dolphin, A. (2007). *The Book: Playing the Percentages in Baseball.* Potomac Books.
 
+Tangirala, A. (2026). *Beyond Raw wRC+: Which Triple-A Hitting Skills Translate to Major League Baseball — reproducibility repository* [Software]. Zenodo. <https://doi.org/10.5281/zenodo.21186325>
+
 ---
 
 ## Appendix — Data availability and reproducibility
@@ -344,6 +346,8 @@ The bulk CSV export functionality on FanGraphs is available to Membership subscr
 Code and derived outputs are available at:
 
 **<https://github.com/aarushtangirala09-stack/aaa-mlb-translation>**
+
+A permanent, citable snapshot of the repository at the time of paper submission is archived on Zenodo at DOI **[10.5281/zenodo.21186325](https://doi.org/10.5281/zenodo.21186325)**.
 
 The repository contains the four analysis scripts (`01_load_and_match.py`, `02_regression.py`, `03_translation_score.py`, `04_survivorship.py`), two extension probes referenced in §6 (`probe_extended_score.py`, `probe_pcl.py`), the figure-generation script, and four derived output tables that contain no per-player FanGraphs values:
 
