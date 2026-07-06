@@ -6,7 +6,7 @@
 
 ## Abstract
 
-Triple-A weighted Runs Created Plus (wRC+) is widely used as a shorthand for a minor-league hitter's major-league potential, yet wRC+ is itself a composite of underlying offensive skills whose translation rates to MLB may differ. Using FanGraphs data on 486 Triple-A hitters from 2015–2024 who accumulated at least 200 MLB plate appearances, and restricting AAA aggregates to seasons preceding each player's MLB debut, we regress career plate-appearance-weighted MLB wRC+ on five standardized AAA inputs: walk rate, strikeout rate, isolated power, BABIP (each z-scored within season to absorb era drift), and age at debut. Isolated power is the strongest positive predictor (+5.48 wRC+ points per SD, *p* < 0.001), strikeout rate the strongest negative (−3.54, *p* < 0.001); walk rate is meaningful but smaller (+2.64), age at debut is small (−1.92), and BABIP is non-predictive. A composite "AAA Translation Score" built from these weights ties raw AAA wRC+ on out-of-sample prediction (paired difference in cross-validated R², hereafter ΔCV-R² = −0.001, wins 5 of 10 repeats). A model combining the Translation Score with raw AAA wRC+ modestly but consistently outperforms either alone (paired ΔCV-R² = +0.007, *p* = 0.005 on 9 df, wins 8 of 10 repeats). Inverse probability weighting to correct for survivorship into the 200+ MLB PA cohort *strengthens* the ISO and K% coefficients (by 6% and 5% respectively), consistent with range-restriction attenuation of slopes under outcome-side selection. The paper's primary contribution is a transparent per-skill translation table; the practical recommendation is to augment AAA wRC+ with its disaggregated skill components rather than to replace it.
+Triple-A weighted Runs Created Plus (wRC+) is widely used as a shorthand for a minor-league hitter's major-league potential, yet wRC+ is itself a composite of underlying offensive skills whose translation rates to MLB may differ. Using FanGraphs data on 486 Triple-A hitters from 2015–2024 who accumulated at least 200 MLB plate appearances, and restricting AAA aggregates to seasons preceding each player's MLB debut, we regress career plate-appearance-weighted MLB wRC+ on five standardized AAA inputs: walk rate, strikeout rate, isolated power, BABIP (each z-scored within season to absorb era drift), and age at debut. Isolated power is the strongest positive predictor (+5.48 wRC+ points per SD, *p* < 0.001), strikeout rate the strongest negative (−3.54, *p* < 0.001); walk rate is meaningful but smaller (+2.64), age at debut is small (−1.92), and BABIP is non-predictive. A composite "AAA Translation Score" built from these weights ties raw AAA wRC+ on out-of-sample prediction (paired difference in cross-validated R², hereafter ΔCV-R² = −0.001, wins 5 of 10 repeats). A model combining the Translation Score with raw AAA wRC+ modestly but consistently outperforms either alone (paired ΔCV-R² = +0.007, *p* = 0.005 on 9 df, wins 8 of 10 repeats). Inverse probability weighting to correct for survivorship into the 200+ MLB PA cohort *strengthens* the ISO and K% coefficients (by 6% and 5% respectively), consistent with range-restriction attenuation of slopes under outcome-side selection. A Bayesian re-fit of the skill model with weakly informative priors yields posterior means within 0.1 wRC+ of the OLS estimates and confirms the direction of every significant translation effect (posterior *P*(β > 0) = 1.000 for ISO, 0.000 for K%, 0.998 for BB%, 0.015 for age; 0.687 for BABIP, indicating non-predictiveness). The paper's primary contribution is a transparent per-skill translation table; the practical recommendation is to augment AAA wRC+ with its disaggregated skill components rather than to replace it.
 
 ---
 
@@ -239,6 +239,27 @@ The two significant translators — ISO and K% — both increase in magnitude af
 
 Sensitivity analyses imputing non-cohort MLB wRC+ at 50, 80, and 100 (using the all-AAA predictor definition consistent across cohort and non-cohort) produce coefficient signs that are stable across scenarios for ISO (positive) and K% (negative); the magnitudes vary with the imputation. Under the implausibly optimistic assumption that all non-survivors would have hit league-average MLB wRC+ = 100, ISO attenuates near zero — but this is essentially the assumption that AAA power carries no MLB information, which contradicts the IPW result. Under the more plausible pessimistic-to-neutral imputations, ISO and K% retain the direction and rough magnitude of the cohort estimates.
 
+### 4.5 Bayesian robustness check
+
+The regressions in §4.2 make frequentist point-estimate claims about each translation coefficient. To confirm those claims do not depend on frequentist assumptions and to communicate posterior uncertainty more explicitly, we refit the skill model as a Bayesian linear regression using PyMC (Salvatier et al., 2016). The specification is identical to the OLS skill model: MLB wRC+ regressed on the five standardized AAA predictors. Priors are weakly informative — Normal(0, 10) on each standardized coefficient, Normal(*ȳ*, 20) on the intercept, and HalfNormal(20) on the residual standard deviation. Posterior sampling used the No-U-Turn Sampler with 4 chains of 2,000 warm-up and 2,000 sampling iterations (8,000 posterior draws total) at target_accept = 0.95. Convergence was confirmed for every coefficient (maximum split-R̂ = 1.000; minimum effective sample size = 8,000).
+
+**Table 5.** Posterior summary from the Bayesian skill regression (N = 486). CI = 95% credible interval; *P*(β > 0) = posterior probability the coefficient is positive.
+
+| Predictor | OLS coefficient (SE) | Bayesian posterior mean | 95% credible interval | *P*(β > 0) |
+|---|---|---|---|---|
+| AAA ISO (season-adj) | +5.48 (1.02) | +5.41 | [+3.39, +7.38] | **1.000** |
+| AAA K% (season-adj) | −3.54 (1.02) | −3.48 | [−5.45, −1.51] | **0.000** |
+| AAA BB% (season-adj) | +2.64 (0.91) | +2.62 | [+0.84, +4.37] | 0.998 |
+| Age at MLB debut | −1.92 (0.90) | −1.92 | [−3.68, −0.20] | 0.015 |
+| AAA BABIP (season-adj) | +0.43 (0.90) | +0.43 | [−1.25, +2.14] | 0.687 |
+
+<figure>
+<img src="figures/10_bayesian_posteriors.png" alt="Posterior distributions of Bayesian skill-model coefficients">
+<figcaption><strong>Figure 6.</strong> Posterior distributions of the five skill-model coefficients under weakly informative Normal(0, 10) priors. Green fills mark predictors with strictly positive posterior mass (AAA ISO, AAA BB%); red fills mark strictly negative posterior mass (AAA K%, age at debut); AAA BABIP's posterior straddles zero. Vertical dashed line marks β = 0 (no translation effect).</figcaption>
+</figure>
+
+Posterior means match the OLS estimates within 0.1 wRC+ points, as expected at N = 486 under weakly informative priors. What the Bayesian framing adds is a direct probability statement: given the data and priors, there is essentially certainty (*P* > 0.998) that AAA ISO, K%, and BB% translate in the expected directions; near-certainty (*P* = 0.985 that β < 0) that age at debut has a negative effect; and no meaningful posterior evidence against zero for AAA BABIP (*P*(β > 0) = 0.687, credible interval straddling zero). All primary conclusions from §4.2 — the ranking of translators, the null result for BABIP, the relative magnitude of ISO versus plate discipline — hold under the Bayesian framing.
+
 ---
 
 ## 5. Discussion
@@ -319,6 +340,8 @@ Horvitz, D. G., & Thompson, D. J. (1952). A generalization of sampling without r
 Mitchell, C. (2014–2017). *KATOH: Forecasting major league hitting with minor league stats.* The Hardball Times / FanGraphs.
 
 Robins, J. M., Hernán, M. A., & Brumback, B. (2000). Marginal structural models and causal inference in epidemiology. *Epidemiology*, 11(5), 550–560.
+
+Salvatier, J., Wiecki, T. V., & Fonnesbeck, C. (2016). Probabilistic programming in Python using PyMC3. *PeerJ Computer Science*, 2, e55.
 
 Szymborski, D. (ongoing). *ZiPS Projections.* FanGraphs. <https://www.fangraphs.com>
 
