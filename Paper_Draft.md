@@ -26,11 +26,11 @@ The paper proceeds as follows. Section 2 situates the analysis within existing p
 
 Quantitative projection of major-league hitting from minor-league performance has a substantial publicly visible history. The most relevant precedent for this paper is the **KATOH** projection system (Mitchell, 2014–2017), which uses minor-league offensive and batted-ball statistics to forecast major-league WAR. KATOH's reported out-of-sample fit for AAA-to-MLB hitting projection is in the modest range characteristic of this problem class — a useful qualitative calibration point, though we avoid citing a specific numerical R² band because Mitchell's articles do not consistently report a single such number across specifications.
 
-More broadly, the public projection systems **ZiPS** (Szymborski, ongoing) and **Steamer** (Cross et al., ongoing) are commonly used for MLB-to-MLB forecasting and have minor-league extensions; both incorporate aging curves, league/park adjustments, and weighting schemes derived from large historical datasets. Neither, to our knowledge, publishes an explicit per-skill translation table for AAA inputs — the empirical weights live inside the projection algorithms but are not surfaced as a substantive finding.
+More broadly, the public projection systems **ZiPS** (Szymborski, ongoing), **Steamer** (Cross et al., ongoing), and the earlier **PECOTA** framework (Silver, 2003) are commonly used for MLB-to-MLB forecasting and have minor-league extensions; all three incorporate aging curves, league/park adjustments, and weighting schemes derived from large historical datasets. None, to our knowledge, publishes an explicit per-skill translation table for AAA inputs — the empirical weights live inside the projection algorithms but are not surfaced as a substantive finding. Adjacent baseball-analytics work in the *Journal of Quantitative Analysis in Sports* has examined MLB player valuation from a portfolio-theoretic lens (Pinheiro and Szymanski, 2025) and individual contribution decomposition in other team sports (Powers, Stancil, and Consiglio, 2025), but neither directly targets the AAA-to-MLB translation problem addressed here.
 
 The outcome variable in this paper, **wRC+** (weighted Runs Created Plus; FanGraphs Sabermetrics Library), is a park- and league-adjusted offensive index built on the linear-weights framework introduced by Tango et al. (2007). wRC+ scales to 100 = league average, with each integer point above or below representing one percentage point of offensive run creation above or below average. As a park- and league-adjusted statistic, wRC+ allows direct comparison across eras and ballparks; this is the property that makes it a defensible target for a projection model whose inputs span ten AAA seasons and two leagues.
 
-The survivorship-correction methodology employed in Section 3.5, inverse probability weighting (IPW), traces to Horvitz and Thompson (1952) and was extended for causal inference in observational settings by Robins, Hernán, and Brumback (2000), among others. IPW is standard in epidemiology and labor economics for correcting selection on observables. The concept underlying our expected direction of correction is **range restriction**: when observations are conditioned on the outcome (here, "player reached MLB with 200+ PA"), the observed outcome variance in the cohort is compressed relative to the underlying population, and observed slopes are attenuated toward zero. Removing the conditioning via IPW should therefore, under standard theory, produce coefficients equal to or larger in magnitude than the unweighted cohort estimates — and this is what we observe.
+The survivorship-correction methodology employed in Section 3.5, inverse probability weighting (IPW), traces to Horvitz and Thompson (1952) and was extended for causal inference in observational settings by Rosenbaum and Rubin (1983), Robins, Hernán, and Brumback (2000), and Imbens and Rubin (2015), among others. A recent JQAS study of NHL aging curves (Cavan, Cao, and Swartz, 2025) explicitly addresses the survivorship-into-long-careers analog of the problem treated here. IPW is standard in epidemiology and labor economics for correcting selection on observables. The concept underlying our expected direction of correction is **range restriction**: when observations are conditioned on the outcome (here, "player reached MLB with 200+ PA"), the observed outcome variance in the cohort is compressed relative to the underlying population, and observed slopes are attenuated toward zero. Removing the conditioning via IPW should therefore, under standard theory, produce coefficients equal to or larger in magnitude than the unweighted cohort estimates — and this is what we observe.
 
 The contribution of this paper is positioned as follows: rather than competing with KATOH/ZiPS/Steamer on raw projection accuracy — a contest those systems would likely win given their proprietary data and modeling sophistication — we offer (i) a transparent, interpretable per-skill translation table with era-adjusted predictors; (ii) a single composite score derived directly from those skill-level weights; (iii) a defensible head-to-head comparison against raw AAA wRC+ using out-of-sample cross-validation with per-fold refitting; and (iv) an explicit IPW-based survivorship correction whose direction of movement is used as a robustness check consistent with range-restriction theory.
 
@@ -93,7 +93,7 @@ We fit three ordinary-least-squares (OLS) regressions of MLB wRC+ on standardize
 
 We compute variance inflation factors (VIF) for each model to diagnose collinearity. VIF > 5 is a warning; VIF > 10 indicates that individual coefficients should not be interpreted in isolation.
 
-To compare predictive accuracy across competing models honestly (§4.3), we use **repeated 5-fold cross-validation (CV) with 10 independent shuffles** (50 train/test splits total). In each fold, **models are refit from scratch on the 80% training partition** — including the standardization step — and evaluated on the held-out 20%. No test-fold information contributes to the model weights. This separates out-of-sample predictive performance from in-sample fit, the latter of which is mechanically inflated by predictor count; a 5-predictor model will always fit the training data better than a 1-predictor model, but the CV comparison correctly penalizes for this by evaluating on unseen data. Throughout the paper, **CV R²** refers to the mean out-of-fold R² across the 50 splits, and **ΔCV-R²** refers to the paired per-repeat difference between a competitor model and the baseline.
+To compare predictive accuracy across competing models honestly (§4.3), we use **repeated 5-fold cross-validation (CV) with 10 independent shuffles** (50 train/test splits total), following the standard treatment of Kohavi (1995) and Hastie, Tibshirani, and Friedman (2009). In each fold, **models are refit from scratch on the 80% training partition** — including the standardization step — and evaluated on the held-out 20%. No test-fold information contributes to the model weights. This separates out-of-sample predictive performance from in-sample fit, the latter of which is mechanically inflated by predictor count; a 5-predictor model will always fit the training data better than a 1-predictor model, but the CV comparison correctly penalizes for this by evaluating on unseen data. We note that CV variance can be non-trivial on clustered or serially correlated observations, as documented recently in a JQAS simulation study of win-probability estimators (Brill, Yurko, and Wyner, 2026); our cohort is cross-sectional across player-careers, which sidesteps the intra-game correlation problem that motivates their concern. Throughout the paper, **CV R²** refers to the mean out-of-fold R² across the 50 splits, and **ΔCV-R²** refers to the paired per-repeat difference between a competitor model and the baseline.
 
 The 10 CV shuffles use identical fold assignments across all models (shuffle seed is a shared function of repeat index), so repeat-level R² values are **paired** across models. We use those paired values two ways: as a mean ± SD of the paired R² difference and a win-count summary, and as a formal **two-tailed one-sample t-test** on the 10 paired differences (H0: mean difference = 0; df = 9), reporting *t* and *p* for each competitor vs. the baseline. A p-value below 0.05 gives formal support for a genuine improvement; a p-value above 0.05 does *not* demonstrate equivalence — it means an improvement, if any, is too small to detect at this sample size, and any interpretation should be correspondingly cautious.
 
@@ -241,7 +241,7 @@ Sensitivity analyses imputing non-cohort MLB wRC+ at 50, 80, and 100 (using the 
 
 ### 4.5 Bayesian robustness check
 
-The regressions in §4.2 make frequentist point-estimate claims about each translation coefficient. To confirm those claims do not depend on frequentist assumptions and to communicate posterior uncertainty more explicitly, we refit the skill model as a Bayesian linear regression using PyMC (Salvatier et al., 2016). The specification is identical to the OLS skill model: MLB wRC+ regressed on the five standardized AAA predictors. Priors are weakly informative — Normal(0, 10) on each standardized coefficient, Normal(*ȳ*, 20) on the intercept, and HalfNormal(20) on the residual standard deviation. Posterior sampling used the No-U-Turn Sampler with 4 chains of 2,000 warm-up and 2,000 sampling iterations (8,000 posterior draws total) at target_accept = 0.95. Convergence was confirmed for every coefficient (maximum split-R̂ = 1.000; minimum effective sample size = 8,000).
+The regressions in §4.2 make frequentist point-estimate claims about each translation coefficient. To confirm those claims do not depend on frequentist assumptions and to communicate posterior uncertainty more explicitly, we refit the skill model as a Bayesian linear regression using PyMC (Salvatier, Wiecki, and Fonnesbeck, 2016), following the weakly informative-prior approach recommended by Gelman et al. (2013) and McElreath (2020). Recent JQAS applications of a similar Bayesian regression style to sports data include Kiriazis, Genest, and Leblanc's (2025) two-stage rebounding-ability model and Nipoti and Schiavon's (2025) Bayesian expected-goals framework with uncertainty quantification. The specification here is identical to the OLS skill model: MLB wRC+ regressed on the five standardized AAA predictors. Priors are weakly informative — Normal(0, 10) on each standardized coefficient, Normal(*ȳ*, 20) on the intercept, and HalfNormal(20) on the residual standard deviation. Posterior sampling used the No-U-Turn Sampler with 4 chains of 2,000 warm-up and 2,000 sampling iterations (8,000 posterior draws total) at target_accept = 0.95. Convergence was confirmed for every coefficient (maximum split-R̂ = 1.000; minimum effective sample size = 8,000).
 
 **Table 5.** Posterior summary from the Bayesian skill regression (N = 486). CI = 95% credible interval; *P*(β > 0) = posterior probability the coefficient is positive.
 
@@ -281,7 +281,7 @@ An earlier, uncorrected specification of this analysis produced a large negative
 <figcaption><strong>Figure 5.</strong> Standardized skill-model coefficients under the uncorrected pipeline (career-PA-weighted AAA aggregates, age in final AAA season, N = 624) vs. the corrected pipeline (pre-debut AAA aggregates only, age at MLB debut, N = 486). The age coefficient collapses by roughly 70% (−6.25 → −1.92) once temporal leakage and reverse causation are removed; the other coefficients move much less.</figcaption>
 </figure>
 
-The remaining age effect is statistically significant but only marginally so (*p* = 0.03, and unadjusted for the five simultaneous tests in Table 2) — a result of the kind that does not always replicate. It is meaningfully smaller than the uncorrected specification would have suggested and is not the paper's largest finding. Stated plainly: age at MLB debut is one relevant projection input among several, its coefficient is small, and readers should treat the specific magnitude with corresponding caution.
+The remaining age effect is statistically significant but only marginally so (*p* = 0.03, and unadjusted for the five simultaneous tests in Table 2) — a result of the kind that does not always replicate. It is meaningfully smaller than the uncorrected specification would have suggested and is not the paper's largest finding. Stated plainly: age at MLB debut is one relevant projection input among several, its coefficient is small, and readers should treat the specific magnitude with corresponding caution. The broader sports-statistics literature offers direct precedents for cross-sectional age-effect estimation in athletic performance (De Veaux, Plantinga, and Upton, 2025) and for handling survivorship-into-long-careers when estimating aging effects longitudinally (Cavan, Cao, and Swartz, 2025); the cross-sectional structure of our cohort more closely resembles the former.
 
 ### 5.3 The Translation Score ties raw wRC+; the value is transparency, not accuracy
 
@@ -325,27 +325,59 @@ We have characterized the AAA-to-MLB offensive translation structure across a co
 
 The practical recommendation is: **augment raw AAA wRC+ with the disaggregated skill components — particularly ISO, K%, and BB% — rather than replace it.** A two-input projection (Translation Score + raw wRC+) improves on the single-number wRC+ heuristic with no additional data requirements. The Translation Score also enables per-skill decomposition of a hitter's projected value, which raw wRC+ structurally cannot.
 
-Future work should incorporate team-to-league mapping to fully control for park effects, use Chadwick-register debut lookups to eliminate the observed-vs.-true-debut-year problem, extend the cohort to AA hitters, and revisit the analysis once minor-league Statcast data become publicly available.
+Future work should incorporate team-to-league mapping to fully control for park effects, use Chadwick-register debut lookups to eliminate the observed-vs.-true-debut-year problem, extend the cohort to AA hitters, and revisit the analysis once minor-league Statcast data become publicly available. On the methodological side, natural next steps include hierarchical shrinkage of the per-skill translation coefficients toward empirical-Bayes prior means (in the spirit of Efron, 2010) and Bayesian model comparison via approximate leave-one-out cross-validation (Vehtari, Gelman, and Gabry, 2017), both of which would sharpen the uncertainty statements in §4.5 without changing the underlying data requirements.
 
 ---
 
 ## References
 
+Brill, R. S., Yurko, R., & Wyner, A. J. (2026). Exploring the difficulty of estimating win probability: a simulation study. *Journal of Quantitative Analysis in Sports*, 22(1), 105–115. https://doi.org/10.1515/jqas-2024-0130
+
+Cavan, E., Cao, J., & Swartz, T. B. (2025). NHL aging curves using functional principal component analysis. *Journal of Quantitative Analysis in Sports*, 21(3), 177–189. https://doi.org/10.1515/jqas-2024-0083
+
 Cross, J., et al. (ongoing). *Steamer Projections.* FanGraphs. <https://www.fangraphs.com>
+
+De Veaux, R., Plantinga, A., & Upton, E. (2025). Age and performance in masters swimming and running. *Journal of Quantitative Analysis in Sports*, 21(2), 137–152. https://doi.org/10.1515/jqas-2024-0018
+
+Efron, B. (2010). *Large-Scale Inference: Empirical Bayes Methods for Estimation, Testing, and Prediction.* Cambridge University Press.
 
 FanGraphs Sabermetrics Library. (ongoing). *wRC and wRC+.* <https://library.fangraphs.com/offense/wrc/>
 
+Gelman, A., Carlin, J. B., Stern, H. S., Dunson, D. B., Vehtari, A., & Rubin, D. B. (2013). *Bayesian Data Analysis* (3rd ed.). CRC Press.
+
+Hastie, T., Tibshirani, R., & Friedman, J. (2009). *The Elements of Statistical Learning: Data Mining, Inference, and Prediction* (2nd ed.). Springer.
+
 Horvitz, D. G., & Thompson, D. J. (1952). A generalization of sampling without replacement from a finite universe. *Journal of the American Statistical Association*, 47(260), 663–685.
+
+Imbens, G. W., & Rubin, D. B. (2015). *Causal Inference for Statistics, Social, and Biomedical Sciences: An Introduction.* Cambridge University Press.
+
+Kiriazis, N., Genest, C., & Leblanc, A. (2025). A Bayesian two-stage framework for lineup-independent assessment of individual rebounding ability in the NBA. *Journal of Quantitative Analysis in Sports*, 21(4), 303–326. https://doi.org/10.1515/jqas-2023-0097
+
+Kohavi, R. (1995). A study of cross-validation and bootstrap for accuracy estimation and model selection. In *Proceedings of the 14th International Joint Conference on Artificial Intelligence*, 1137–1143.
+
+McElreath, R. (2020). *Statistical Rethinking: A Bayesian Course with Examples in R and Stan* (2nd ed.). CRC Press.
 
 Mitchell, C. (2014–2017). *KATOH: Forecasting major league hitting with minor league stats.* The Hardball Times / FanGraphs.
 
+Nipoti, B., & Schiavon, L. (2025). Expected goals under a Bayesian viewpoint: uncertainty quantification and online learning. *Journal of Quantitative Analysis in Sports*, 21(1), 37–50. https://doi.org/10.1515/jqas-2024-0081
+
+Pinheiro, R., & Szymanski, S. (2025). On the efficiency of trading intangible fixed assets in Major League Baseball. *Journal of Quantitative Analysis in Sports*, 21(1), 23–36. https://doi.org/10.1515/jqas-2024-0063
+
+Powers, S., Stancil, L., & Consiglio, N. (2025). Estimating individual contributions to team success in women's college volleyball. *Journal of Quantitative Analysis in Sports*, 21(2), 117–135. https://doi.org/10.1515/jqas-2024-0038
+
 Robins, J. M., Hernán, M. A., & Brumback, B. (2000). Marginal structural models and causal inference in epidemiology. *Epidemiology*, 11(5), 550–560.
 
+Rosenbaum, P. R., & Rubin, D. B. (1983). The central role of the propensity score in observational studies for causal effects. *Biometrika*, 70(1), 41–55.
+
 Salvatier, J., Wiecki, T. V., & Fonnesbeck, C. (2016). Probabilistic programming in Python using PyMC3. *PeerJ Computer Science*, 2, e55.
+
+Silver, N. (2003). Introducing PECOTA. In *Baseball Prospectus 2003* (pp. 507–514). Brassey's.
 
 Szymborski, D. (ongoing). *ZiPS Projections.* FanGraphs. <https://www.fangraphs.com>
 
 Tango, T., Lichtman, M., & Dolphin, A. (2007). *The Book: Playing the Percentages in Baseball.* Potomac Books.
+
+Vehtari, A., Gelman, A., & Gabry, J. (2017). Practical Bayesian model evaluation using leave-one-out cross-validation and WAIC. *Statistics and Computing*, 27(5), 1413–1432.
 
 ---
 
